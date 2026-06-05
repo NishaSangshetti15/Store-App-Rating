@@ -4,7 +4,7 @@ const auth = require("../middleware/auth");
 
 const {
   changePassword
-} = require("../controllers/userController");
+} = require("../controllers/userControllers");
 
 router.put(
   "/change-password",

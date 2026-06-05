@@ -5,8 +5,10 @@ import "../styles/Dashboard.css";
 
 function StoreList({ showHeader = true, adminView = false }) {
   const [stores, setStores] = useState([]);
+  const [owners, setOwners] = useState([]);
   const [myRatings, setMyRatings] = useState({});
   const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ name: "", email: "", address: "", owner_id: "" });
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -15,6 +17,7 @@ function StoreList({ showHeader = true, adminView = false }) {
 
   useEffect(() => {
     loadStores();
+    if (adminView) loadOwners();
     if (!adminView) {
       loadMyRatings();
     }
@@ -29,6 +32,38 @@ function StoreList({ showHeader = true, adminView = false }) {
       showMessage("Failed to load stores", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadOwners = async () => {
+    try {
+      const res = await API.get("/admin/users");
+      setOwners(res.data.users.filter(user => user.role === "owner"));
+    } catch (error) {
+      console.error("Failed to load owners:", error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleStoreSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await API.post("/admin/stores", {
+        name: form.name,
+        email: form.email,
+        address: form.address,
+        owner_id: form.owner_id || null
+      });
+      showMessage("Store created successfully", "success");
+      setForm({ name: "", email: "", address: "", owner_id: "" });
+      loadStores();
+    } catch (error) {
+      const msg = error.response?.data?.message || "Failed to create store";
+      showMessage(msg, "error");
     }
   };
 
@@ -161,6 +196,40 @@ function StoreList({ showHeader = true, adminView = false }) {
         </div>
       )}
 
+      {adminView && (
+        <form onSubmit={handleStoreSubmit} style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleInputChange}
+              placeholder="Store Name"
+              required
+            />
+            <input
+              name="email"
+              value={form.email}
+              onChange={handleInputChange}
+              placeholder="Store Email"
+              type="email"
+            />
+            <input
+              name="address"
+              value={form.address}
+              onChange={handleInputChange}
+              placeholder="Store Address"
+            />
+            <select name="owner_id" value={form.owner_id} onChange={handleInputChange}>
+              <option value="">Assign Owner (optional)</option>
+              {owners.map(owner => (
+                <option key={owner.id} value={owner.id}>{owner.name} ({owner.email})</option>
+              ))}
+            </select>
+            <button type="submit">Add Store</button>
+          </div>
+        </form>
+      )}
+
       <div className="stores-grid">
         {filteredAndSortedStores.length === 0 ? (
           <div className="empty-state">
@@ -187,6 +256,18 @@ function StoreList({ showHeader = true, adminView = false }) {
                   <span>{store.address}</span>
                 </div>
               )}
+
+              {store.owner_id && (
+                <div className="store-info">
+                  <span>👤</span>
+                  <span>{store.owner_name ? `${store.owner_name} (ID: ${store.owner_id})` : `Owner ID: ${store.owner_id}`}</span>
+                </div>
+              )}
+
+              <div className="store-info">
+                <span>🆔</span>
+                <span>Store ID: {store.id}</span>
+              </div>
 
               <div className="rating-display">
                 ⭐ Average Rating: {store.avg_rating ? parseFloat(store.avg_rating).toFixed(1) : "N/A"} / 5

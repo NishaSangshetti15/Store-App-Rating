@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios.js";
 import StoreList from "../components/StoreList.js";
+import UserList from "../components/UserList.js";
 import { validatePassword } from "../utils/validation.js";
 import "../styles/Dashboard.css";
 
@@ -204,6 +205,21 @@ function AdminDashboard() {
           >
             🏪 Stores
           </button>
+          <button
+            onClick={() => setActiveTab("users")}
+            style={{
+              padding: "10px 20px",
+              background: activeTab === "users" ? "#667eea" : "transparent",
+              color: activeTab === "users" ? "white" : "#666",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontWeight: "600",
+              transition: "all 0.3s"
+            }}
+          >
+            👤 Users
+          </button>
         </div>
 
         {/* Stores Tab */}
@@ -211,6 +227,13 @@ function AdminDashboard() {
           <div>
             <h2 style={{ marginBottom: "20px" }}>Store Management</h2>
             <StoreList showHeader={true} adminView={true} />
+          </div>
+        )}
+
+        {activeTab === "users" && (
+          <div>
+            <h2 style={{ marginBottom: "20px" }}>User Management</h2>
+            <UserList showHeader={true} adminView={true} onUserCreated={loadDashboard} />
           </div>
         )}
 
